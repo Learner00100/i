@@ -9,6 +9,16 @@
             font-family: Arial, sans-serif;
             margin: 20px;
         }
+        .clock {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            font-size: 1.5rem;
+            background: #333;
+            color: white;
+            padding: 10px;
+            border-radius: 10px;
+        }
         table {
             width: 100%;
             border-collapse: collapse;
@@ -20,6 +30,7 @@
         }
         th {
             background-color: #f4f4f4;
+            cursor: pointer;
         }
         .highlight {
             background-color: #ffd700;
@@ -30,13 +41,17 @@
     </style>
 </head>
 <body>
+    <div class="clock" id="liveClock"></div>
+
     <h1>Train Schedule</h1>
-    <table>
+    <table id="scheduleTable">
         <thead>
             <tr>
-                <th>Chart Time</th>
-                <th>Train No</th>
-                <th>Train Name</th>
+                <th onclick="sortTable(0)">Chart Time</th>
+                <th onclick="sortTable(1)">Train No</th>
+                <th onclick="sortTable(2)">Train Name</th>
+                <th onclick="sortTable(3)">Origin</th>
+                <th onclick="sortTable(4)">Destination</th>
                 <th>Status</th>
                 <th>Time Left</th>
             </tr>
@@ -48,10 +63,24 @@
 
     <script>
         const scheduleData = [
-            { time: '07:20 PM', trainNo: '16159', trainName: 'Mangaluru' },
-            { time: '07:40 PM', trainNo: '12653', trainName: 'Rockfort' },
-            { time: '03:45 AM', trainNo: '22675', trainName: 'Cholan' },
-            { time: '05:45 AM', trainNo: '16127', trainName: 'Gruvayor Exp' }
+            { time: '07:20 PM', trainNo: '16159', trainName: 'Mangaluru', origin: 'MS', destination: 'MAQ' },
+            { time: '07:40 PM', trainNo: '12653', trainName: 'Rockfort', origin: 'MS', destination: 'TPJ' },
+            { time: '03:45 AM', trainNo: '22675', trainName: 'Cholan', origin: 'MS', destination: 'TPJ' },
+            { time: '05:45 AM', trainNo: '16127', trainName: 'Gruvayor Exp', origin: 'MS', destination: 'GUV' },
+            { time: '09:50 AM', trainNo: '12635', trainName: 'Vaigai', origin: 'MS', destination: 'MDU' },
+            { time: '11:45 AM', trainNo: '12605', trainName: 'Pallavan', origin: 'MS', destination: 'KKDI' },
+            { time: '12:10 PM', trainNo: '20605', trainName: 'MS TCN SF Chendur', origin: 'MS', destination: 'TCN' },
+            { time: '01:00 PM', trainNo: '16101', trainName: 'Kollam', origin: 'MS', destination: 'QLN' },
+            { time: '01:20 PM', trainNo: '12633', trainName: 'Kanniya', origin: 'MS', destination: 'CAPE' },
+            { time: '03:30 PM', trainNo: '12693', trainName: 'Pearl City SF', origin: 'MS', destination: 'TN' },
+            { time: '03:50 PM', trainNo: '20635', trainName: 'Anathapuri', origin: 'MS', destination: 'QLN' },
+            { time: '04:10 PM', trainNo: '12631', trainName: 'Nellai', origin: 'MS', destination: 'TEN' },
+            { time: '04:40 PM', trainNo: '12661', trainName: 'Pothigai', origin: 'MS', destination: 'SCT' },
+            { time: '05:40 PM', trainNo: '12637', trainName: 'Pandian', origin: 'MS', destination: 'MDU' },
+            { time: '06:20 PM', trainNo: '16865', trainName: 'Uzhavan', origin: 'MS', destination: 'TJ' },
+            { time: '06:30 PM', trainNo: '20691', trainName: 'Antyoda', origin: 'TBM', destination: 'NAG' },
+            { time: '03:25 PM', trainNo: '20606', trainName: 'Chendur', origin: 'TCN', destination: 'MS' },
+            { time: '04:50 PM', trainNo: '16866', trainName: 'Uzhavan', origin: 'TJ', destination: 'MS' }
         ];
 
         function timeStringToDate(timeStr) {
@@ -68,6 +97,16 @@
             return today;
         }
 
+        function formatTimeLeft(diffInMin) {
+            if (diffInMin >= 60) {
+                const hours = Math.floor(diffInMin / 60);
+                const minutes = diffInMin % 60;
+                return `${hours} hr ${minutes} min`;
+            } else {
+                return `${diffInMin} min`;
+            }
+        }
+
         function updateSchedule() {
             const now = new Date();
             const tbody = document.getElementById('schedule-body');
@@ -79,7 +118,7 @@
                 const diffInMin = Math.floor(diffInMs / 1000 / 60);
 
                 let status = 'Upcoming';
-                let timeLeft = `${Math.abs(diffInMin)} mins`;
+                let timeLeft = formatTimeLeft(Math.abs(diffInMin));
 
                 if (diffInMin < 0 && Math.abs(diffInMin) >= 240) {
                     status = 'Train Departed';
@@ -100,6 +139,8 @@
                     <td>${train.time}</td>
                     <td>${train.trainNo}</td>
                     <td>${train.trainName}</td>
+                    <td>${train.origin}</td>
+                    <td>${train.destination}</td>
                     <td>${status}</td>
                     <td>${timeLeft}</td>
                 `;
@@ -108,9 +149,38 @@
             });
         }
 
-        // Update schedule every minute
+        function updateClock() {
+            const now = new Date();
+            const hours = now.getHours() % 12 || 12;
+            const minutes = String(now.getMinutes()).padStart(2, '0');
+            const seconds = String(now.getSeconds()).padStart(2, '0');
+            const ampm = now.getHours() >= 12 ? 'PM' : 'AM';
+            const day = now.toLocaleDateString('en-US', { weekday: 'long' });
+
+            const timeString = `${hours}:${minutes}:${seconds} ${ampm} - ${day}`;
+            document.getElementById('liveClock').innerText = timeString;
+        }
+
+        function sortTable(n) {
+            const table = document.getElementById("scheduleTable");
+            const rows = Array.from(table.rows).slice(1);
+            const tbody = document.getElementById('schedule-body');
+            
+            rows.sort((row1, row2) => {
+                const cell1 = row1.cells[n].innerText;
+                const cell2 = row2.cells[n].innerText;
+                return cell1.localeCompare(cell2);
+            });
+
+            tbody.innerHTML = '';
+            rows.forEach(row => tbody.appendChild(row));
+        }
+
+        // Update schedule and clock every minute
         updateSchedule();
+        updateClock();
         setInterval(updateSchedule, 60000);
+        setInterval(updateClock, 1000);
     </script>
 </body>
 </html>
