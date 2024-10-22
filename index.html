@@ -118,13 +118,11 @@
                 const diffInMin = Math.floor(diffInMs / 1000 / 60);
 
                 let status = 'Upcoming';
-                let timeLeft;
+                let timeLeft = formatTimeLeft(Math.abs(diffInMin));
 
-                if (diffInMin >= 0) {
-                    timeLeft = formatTimeLeft(diffInMin);
-                } else {
+                if (diffInMin < 0 && Math.abs(diffInMin) >= 240) {
+                    status = 'Train Departed';
                     timeLeft = 'N/A';
-                    status = Math.abs(diffInMin) >= 240 ? 'Train Departed' : 'Train Left';
                 }
 
                 const tr = document.createElement('tr');
@@ -178,11 +176,11 @@
             rows.forEach(row => tbody.appendChild(row));
         }
 
-        // Update schedule and clock every second for live updates
+        // Update schedule and clock every minute
         updateSchedule();
         updateClock();
-        setInterval(updateSchedule, 60000); // Update schedule every minute
-        setInterval(updateClock, 1000); // Update clock every second
+        setInterval(updateSchedule, 60000);
+        setInterval(updateClock, 1000);
     </script>
 </body>
 </html>
