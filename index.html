@@ -108,54 +108,55 @@
         }
 
         function updateSchedule() {
-            const now = new Date();
-            const tbody = document.getElementById('schedule-body');
-            tbody.innerHTML = '';
+    const now = new Date();
+    const tbody = document.getElementById('schedule-body');
+    tbody.innerHTML = '';
 
-            scheduleData.forEach((train) => {
-                const trainTime = timeStringToDate(train.time);
-                const diffInMs = trainTime - now;
-                const diffInMin = Math.floor(diffInMs / 1000 / 60);
+    scheduleData.forEach((train) => {
+        const trainTime = timeStringToDate(train.time);
+        const diffInMs = trainTime - now;
+        const diffInMin = Math.floor(diffInMs / 1000 / 60);
 
-                let status = 'Upcoming';
-                let timeLeft;
+        let status = 'Upcoming';
+        let timeLeft;
 
-                if (diffInMin >= 0) {
-                    timeLeft = formatTimeLeft(diffInMin);
-                } else {
-                    const timePassed = Math.abs(diffInMin);
-                    if (timePassed <= 240) {
-                        timeLeft = `Departed ${formatTimeLeft(timePassed)} ago`;
-                        status = 'Train Left';
-                    } else {
-                        timeLeft = 'N/A';
-                        status = 'Train Departed';
-                    }
-                }
-
-                const tr = document.createElement('tr');
-
-                if (diffInMin >= 0 && diffInMin < 240) {
-                    tr.classList.add('highlight');
-                }
-
-                if (status === 'Train Departed') {
-                    tr.classList.add('departed');
-                }
-
-                tr.innerHTML = `
-                    <td>${train.time}</td>
-                    <td>${train.trainNo}</td>
-                    <td>${train.trainName}</td>
-                    <td>${train.origin}</td>
-                    <td>${train.destination}</td>
-                    <td>${status}</td>
-                    <td>${timeLeft}</td>
-                `;
-
-                tbody.appendChild(tr);
-            });
+        if (diffInMin >= 0) {
+            timeLeft = formatTimeLeft(diffInMin); // Time remaining before the train departs
+        } else {
+            const timePassed = Math.abs(diffInMin);
+            if (timePassed <= 240) {
+                timeLeft = `Departed ${formatTimeLeft(timePassed)} ago`;
+                status = 'Train Left'; // Train has left but less than 4 hours ago
+            } else {
+                timeLeft = 'N/A';
+                status = 'Train Departed'; // Train left more than 4 hours ago
+            }
         }
+
+        const tr = document.createElement('tr');
+
+        if (diffInMin >= 0) {
+            tr.classList.add('highlight'); // Highlight upcoming trains
+        }
+
+        if (status === 'Train Departed') {
+            tr.classList.add('departed'); // Style for departed trains
+        }
+
+        tr.innerHTML = `
+            <td>${train.time}</td>
+            <td>${train.trainNo}</td>
+            <td>${train.trainName}</td>
+            <td>${train.origin}</td>
+            <td>${train.destination}</td>
+            <td>${status}</td>
+            <td>${timeLeft}</td>
+        `;
+
+        tbody.appendChild(tr);
+    });
+}
+
 
         function updateClock() {
             const now = new Date();
