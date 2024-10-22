@@ -117,30 +117,33 @@
         const diffInMs = trainTime - now;
         const diffInMin = Math.floor(diffInMs / 1000 / 60);
 
-        let status = 'Upcoming';
+        let status = 'Upcoming';  // Default status for upcoming trains
         let timeLeft;
 
         if (diffInMin >= 0) {
-            timeLeft = formatTimeLeft(diffInMin); // Time remaining before the train departs
+            // Train is still upcoming, show the remaining time
+            timeLeft = `${diffInMin} min`;  // Show time remaining until departure
         } else {
-            const timePassed = Math.abs(diffInMin);
-            if (timePassed <= 240) {
-                timeLeft = `Departed ${formatTimeLeft(timePassed)} ago`;
-                status = 'Train Left'; // Train has left but less than 4 hours ago
-            } else {
+            const timePassed = Math.abs(diffInMin);  // Train has already departed
+            if (timePassed > 240) {
+                // If more than 4 hours have passed since departure
+                status = 'Train Departed';
                 timeLeft = 'N/A';
-                status = 'Train Departed'; // Train left more than 4 hours ago
+            } else {
+                // If less than 4 hours have passed, still mark as "Departed"
+                status = 'Train Departed';
+                timeLeft = `Departed ${timePassed} min ago`;
             }
         }
 
         const tr = document.createElement('tr');
 
         if (diffInMin >= 0) {
-            tr.classList.add('highlight'); // Highlight upcoming trains
+            tr.classList.add('highlight');  // Highlight upcoming trains
         }
 
         if (status === 'Train Departed') {
-            tr.classList.add('departed'); // Style for departed trains
+            tr.classList.add('departed');  // Style for departed trains
         }
 
         tr.innerHTML = `
