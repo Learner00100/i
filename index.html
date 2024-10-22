@@ -108,58 +108,48 @@
         }
 
         function updateSchedule() {
-    const now = new Date();
-    const tbody = document.getElementById('schedule-body');
-    tbody.innerHTML = '';
+            const now = new Date();
+            const tbody = document.getElementById('schedule-body');
+            tbody.innerHTML = '';
 
-    scheduleData.forEach((train) => {
-        const trainTime = timeStringToDate(train.time);
-        const diffInMs = trainTime - now;
-        const diffInMin = Math.floor(diffInMs / 1000 / 60);
+            scheduleData.forEach((train) => {
+                const trainTime = timeStringToDate(train.time);
+                const diffInMs = trainTime - now;
+                const diffInMin = Math.floor(diffInMs / 1000 / 60);
 
-        let status = 'Upcoming';  // Default status for upcoming trains
-        let timeLeft;
+                let status = 'Upcoming';
+                let timeLeft;
 
-        if (diffInMin >= 0) {
-            // Train is still upcoming, show the remaining time
-            timeLeft = `${diffInMin} min`;  // Show time remaining until departure
-        } else {
-            const timePassed = Math.abs(diffInMin);  // Train has already departed
-            if (timePassed > 240) {
-                // If more than 4 hours have passed since departure
-                status = 'Train Departed';
-                timeLeft = 'N/A';
-            } else {
-                // If less than 4 hours have passed, still mark as "Departed"
-                status = 'Train Departed';
-                timeLeft = `Departed ${timePassed} min ago`;
-            }
+                if (diffInMin >= 0) {
+                    timeLeft = formatTimeLeft(diffInMin);
+                } else {
+                    timeLeft = 'N/A';
+                    status = Math.abs(diffInMin) >= 240 ? 'Train Departed' : 'Train Left';
+                }
+
+                const tr = document.createElement('tr');
+
+                if (diffInMin >= 0 && diffInMin < 240) {
+                    tr.classList.add('highlight');
+                }
+
+                if (status === 'Train Departed') {
+                    tr.classList.add('departed');
+                }
+
+                tr.innerHTML = `
+                    <td>${train.time}</td>
+                    <td>${train.trainNo}</td>
+                    <td>${train.trainName}</td>
+                    <td>${train.origin}</td>
+                    <td>${train.destination}</td>
+                    <td>${status}</td>
+                    <td>${timeLeft}</td>
+                `;
+
+                tbody.appendChild(tr);
+            });
         }
-
-        const tr = document.createElement('tr');
-
-        if (diffInMin >= 0) {
-            tr.classList.add('highlight');  // Highlight upcoming trains
-        }
-
-        if (status === 'Train Departed') {
-            tr.classList.add('departed');  // Style for departed trains
-        }
-
-        tr.innerHTML = `
-            <td>${train.time}</td>
-            <td>${train.trainNo}</td>
-            <td>${train.trainName}</td>
-            <td>${train.origin}</td>
-            <td>${train.destination}</td>
-            <td>${status}</td>
-            <td>${timeLeft}</td>
-        `;
-
-        tbody.appendChild(tr);
-    });
-}
-
 
         function updateClock() {
             const now = new Date();
