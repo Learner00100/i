@@ -123,8 +123,14 @@
                 if (diffInMin >= 0) {
                     timeLeft = formatTimeLeft(diffInMin);
                 } else {
-                    timeLeft = 'N/A';
-                    status = Math.abs(diffInMin) >= 240 ? 'Train Departed' : 'Train Left';
+                    const timePassed = Math.abs(diffInMin);
+                    if (timePassed <= 240) {
+                        timeLeft = `Departed ${formatTimeLeft(timePassed)} ago`;
+                        status = 'Train Left';
+                    } else {
+                        timeLeft = 'N/A';
+                        status = 'Train Departed';
+                    }
                 }
 
                 const tr = document.createElement('tr');
