@@ -61,6 +61,7 @@
         </tbody>
     </table>
 
+
     <script>
         const scheduleData = [
             { time: '07:20 PM', trainNo: '16159', trainName: 'Mangaluru', origin: 'MS', destination: 'MAQ' },
@@ -69,7 +70,7 @@
             { time: '05:45 AM', trainNo: '16127', trainName: 'Gruvayor Exp', origin: 'MS', destination: 'GUV' },
             { time: '09:50 AM', trainNo: '12635', trainName: 'Vaigai', origin: 'MS', destination: 'MDU' },
             { time: '11:45 AM', trainNo: '12605', trainName: 'Pallavan', origin: 'MS', destination: 'KKDI' },
-            { time: '12:10 PM', trainNo: '20605', trainName: 'MS TCN SF Chendur', origin: 'MS', destination: 'TCN' },
+            { time: '12:10 AM', trainNo: '20605', trainName: 'MS TCN SF Chendur', origin: 'MS', destination: 'TCN' },
             { time: '01:00 PM', trainNo: '16101', trainName: 'Kollam', origin: 'MS', destination: 'QLN' },
             { time: '01:20 PM', trainNo: '12633', trainName: 'Kanniya', origin: 'MS', destination: 'CAPE' },
             { time: '03:30 PM', trainNo: '12693', trainName: 'Pearl City SF', origin: 'MS', destination: 'TN' },
@@ -86,15 +87,11 @@
         function timeStringToDate(timeStr) {
             const [time, modifier] = timeStr.split(' ');
             let [hours, minutes] = time.split(':');
-            if (modifier === 'PM' && hours !== '12') {
-                hours = parseInt(hours, 10) + 12;
-            }
-            if (modifier === 'AM' && hours === '12') {
-                hours = 0;
-            }
-            const today = new Date();
-            today.setHours(hours, minutes, 0, 0);
-            return today;
+            if (modifier === 'PM' && hours !== '12') hours = parseInt(hours, 10) + 12;
+            if (modifier === 'AM' && hours === '12') hours = 0; 
+
+            const now = new Date();
+            return new Date(now.getFullYear(), now.getMonth(), now.getDate(), hours, minutes);
         }
 
         function formatTimeLeft(diffInMin) {
@@ -108,48 +105,57 @@
         }
 
         function updateSchedule() {
-            const now = new Date();
-            const tbody = document.getElementById('schedule-body');
-            tbody.innerHTML = '';
+    const now = new Date();
+    const tbody = document.getElementById('schedule-body');
+    tbody.innerHTML = '';
 
-            scheduleData.forEach((train) => {
-                const trainTime = timeStringToDate(train.time);
-                const diffInMs = trainTime - now;
-                const diffInMin = Math.floor(diffInMs / 1000 / 60);
+    scheduleData.sort((a, b) => timeStringToDate(a.time) - timeStringToDate(b.time));
 
-                let status = 'Upcoming';
-                let timeLeft = formatTimeLeft(Math.abs(diffInMin));
+    scheduleData.forEach(train => {
+        const trainTime = timeStringToDate(train.time);
+        const diffInMs = trainTime - now;
+        const diffInMin = Math.floor(diffInMs / 1000 / 60);
 
-                if (diffInMin < 0 && Math.abs(diffInMin) >= 240) {
-                    status = 'Train Departed';
-                    timeLeft = 'N/A';
-                }
+        let status, timeLeft;
 
-                const tr = document.createElement('tr');
+        if (diffInMin < -240) {
+            status = 'Departed';
+            timeLeft = 'NA';
+        } else if (diffInMin >= -240 && diffInMin <= 0) {
+            status = "Live";
+            timeLeft = formatTimeLeft(Math.abs(diffInMin));
+        } else if (diffInMin > 0) {
+            status = 'Not started';
+            timeLeft = 'NA';
+        }
 
-                if (diffInMin >= 0 && diffInMin < 240) {
-                    tr.classList.add('highlight');
-                }
+        const tr = document.createElement('tr');
 
-                if (status === 'Train Departed') {
-                    tr.classList.add('departed');
+        let trainNameCellContent = train.trainName; // Variable for train name cell
+                if (status === 'Live') {
+                    trainNameCellContent = `<a href="https://www.irctc.co.in/online-charts/" target="_blank">${train.trainName}</a>`; // Link in train name
                 }
 
                 tr.innerHTML = `
                     <td>${train.time}</td>
-                    <td>${train.trainNo}</td>
-                    <td>${train.trainName}</td>
+                    <td>${train.trainNo}</td>  
+                    <td id="trainName-${train.trainNo}">${trainNameCellContent}</td>  
                     <td>${train.origin}</td>
                     <td>${train.destination}</td>
-                    <td>${status}</td>
-                    <td>${timeLeft}</td>
+                    <td id="status-${train.trainNo}">${status}</td>
+                    <td id="timeLeft-${train.trainNo}">${timeLeft}</td>
                 `;
 
-                tbody.appendChild(tr);
-            });
+        if (status === 'Live') {
+            tr.classList.add('highlight');
+        } else if (status === 'Departed') {
+            tr.classList.add('departed');
         }
+        tbody.appendChild(tr);
+    });
+}
 
-        function updateClock() {
+        function updateClockAndTimeLeft() {
             const now = new Date();
             const hours = now.getHours() % 12 || 12;
             const minutes = String(now.getMinutes()).padStart(2, '0');
@@ -159,7 +165,56 @@
 
             const timeString = `${hours}:${minutes}:${seconds} ${ampm} - ${day}`;
             document.getElementById('liveClock').innerText = timeString;
+
+
+            scheduleData.forEach(train => {
+        const trainTime = timeStringToDate(train.time);
+        const diffInMs = trainTime - now;
+        const diffInMin = Math.floor(diffInMs / 1000 / 60);
+
+        let status, timeLeft; // Declare outside the if block
+
+        if (diffInMin < -240) {
+            status = 'Departed';
+            timeLeft = 'NA';
+        } else if (diffInMin >= -240 && diffInMin <= 0) {
+            status = "Live";
+            timeLeft = formatTimeLeft(Math.abs(diffInMin));
+        } else if (diffInMin > 0) {
+            status = 'Not started';
+            timeLeft = 'NA';
         }
+
+
+        const statusCell = document.getElementById(`status-${train.trainNo}`);
+        const timeLeftCell = document.getElementById(`timeLeft-${train.trainNo}`);
+        const trainNoCell = document.getElementById(`trainNo-${train.trainNo}`);
+
+
+        if (statusCell && timeLeftCell && trainNoCell) { // Check for trainNoCell
+            statusCell.textContent = status;
+            timeLeftCell.textContent = timeLeft;
+
+
+            if (status === 'Live' && !trainNoCell.querySelector('a')) {
+               trainNoCell.innerHTML = `<a href="https://www.irctc.co.in/online-charts/" target="_blank">${train.trainNo}</a>`;
+            } else if (status !== 'Live' && trainNoCell.querySelector('a')) {
+                trainNoCell.textContent = train.trainNo;
+            }
+
+
+
+
+            if (status === 'Live') {
+                statusCell.parentNode.classList.add('highlight');
+            } else {
+                statusCell.parentNode.classList.remove('highlight');
+            }
+        }
+
+
+    });
+}
 
         function sortTable(n) {
             const table = document.getElementById("scheduleTable");
@@ -177,10 +232,9 @@
         }
 
         // Update schedule and clock every minute
-        updateSchedule();
-        updateClock();
-        setInterval(updateSchedule, 60000);
-        setInterval(updateClock, 1000);
+        updateSchedule(); // Initial setup
+        setInterval(updateClockAndTimeLeft, 1000); // Update every second
+        setInterval(updateSchedule, 60000);    //Full table update every minute.
     </script>
 </body>
 </html>
